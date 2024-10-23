@@ -210,7 +210,7 @@ if __name__ == "__main__":
             update_database(info=True)
             print("資料庫更新成功。")
         elif args.cmd == "showroute":
-            data = asyncio.run(get_complete_bus_info(args.routeid)
+            data = asyncio.run(get_complete_bus_info(args.routeid))
             print(format_bus_info(data))
         elif args.cmd == "searchroute":
             print("開發中...")
