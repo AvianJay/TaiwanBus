@@ -67,7 +67,7 @@ def send_notify(msg):
     os.system(f"termux-notification -t 公車 -i termuxtwbus -c \"{msg}\"")
 
 if __name__=="__main__":
-    parser = argparse.ArgumentParser(description="JGStore Games 遊戲工具")
+    parser = argparse.ArgumentParser(description="TaiwanBus for Termux")
     subparsers = parser.add_subparsers(dest="cmd",
                                        help='可用的指令為: \n' +
                                             'keep, time\n')

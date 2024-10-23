@@ -6,20 +6,39 @@ import xml.etree.ElementTree as et
 import aiosqlite
 import json
 import asyncio
+import argparse
 
-def update_database():
+def update_database(info=False):
+    if info:
+        print("取得台中版本資訊...")
     baseurl = requests.get("https://files.bus.yahoo.com/bustracker/data/dataurl_tcc.txt").text
+    if info:
+        print("下載台中版資料庫...")
     r = requests.get(baseurl + "dat_tcc_zh.gz")
+    if info:
+        print("正在解壓縮...")
     open("bus_tcc.sqlite","wb").write(zlib.decompress(r.content))
+    if info:
+        print("取得台北版本資訊...")
     baseurl = requests.get("https://files.bus.yahoo.com/bustracker/data/dataurl_tpe.txt").text
+    if info:
+        print("下載台北版資料庫...")
     r = requests.get(baseurl + "dat_tpe_zh.gz")
+    if info:
+        print("正在解壓縮...")
     open("bus_tpe.sqlite","wb").write(zlib.decompress(r.content))
+    if info:
+        print("取得全台版本資訊...")
     baseurl = requests.get("https://files.bus.yahoo.com/bustracker/data/dataurl.txt").text
+    if info:
+        print("下載全台版資料庫（無站點資訊）...")
     r = requests.get(baseurl + "dat_twn_zh.gz")
+    if info:
+        print("正在解壓縮...")
     open("bus_twn.sqlite","wb").write(zlib.decompress(r.content))
 
 async def fetch_route(id: int):
-    async with aiosqlite.connect('bus.sqlite') as db:
+    async with aiosqlite.connect('bus_tcc.sqlite') as db:
         async with db.execute("SELECT * FROM routes WHERE route_key = ?", (id,)) as cursor:
             columns = [description[0] for description in cursor.description]
             result = []
@@ -29,7 +48,7 @@ async def fetch_route(id: int):
             return result
 
 async def fetch_routes_byname(name: str):
-    async with aiosqlite.connect('bus.sqlite') as db:
+    async with aiosqlite.connect('bus_tcc.sqlite') as db:
         async with db.execute("SELECT * FROM routes WHERE route_name LIKE ?", ('%' + name + '%',)) as cursor:
             columns = [description[0] for description in cursor.description]
             result = []
@@ -39,7 +58,7 @@ async def fetch_routes_byname(name: str):
             return result
 
 async def fetch_stops_byname(name: str):
-    async with aiosqlite.connect('bus.sqlite') as db:
+    async with aiosqlite.connect('bus_tcc.sqlite') as db:
         async with db.execute("SELECT * FROM stops WHERE stop_name LIKE ?", ('%' + name + '%',)) as cursor:
             columns = [description[0] for description in cursor.description]
             result = []
@@ -49,7 +68,7 @@ async def fetch_stops_byname(name: str):
             return result
 
 async def fetch_paths(id: int):
-    async with aiosqlite.connect('bus.sqlite') as db:
+    async with aiosqlite.connect('bus_tcc.sqlite') as db:
         async with db.execute("SELECT * FROM paths WHERE route_key = ?", (id,)) as cursor:
             columns = [description[0] for description in cursor.description]
             result = []
@@ -59,7 +78,7 @@ async def fetch_paths(id: int):
             return result
 
 async def fetch_stops_by_route(route_key: int):
-    async with aiosqlite.connect('bus.sqlite') as db:
+    async with aiosqlite.connect('bus_tcc.sqlite') as db:
         async with db.execute("SELECT * FROM stops WHERE route_key = ?", (route_key,)) as cursor:
             columns = [description[0] for description in cursor.description]
             result = []
@@ -159,7 +178,7 @@ def format_bus_info(json_data):
             if buses:
                 for bus in buses:
                     bus_id = bus["id"]
-                    bus_full = "滿" if bus["full"] == "1" else "未滿"
+                    bus_full = "已滿" if bus["full"] == "1" else "未滿"
                     stop_info += f" │  └── {bus_id} {bus_full}\n"
             
             # 使用適當的分隔符顯示站點結構
@@ -173,6 +192,30 @@ def format_bus_info(json_data):
 
 
 if __name__ == "__main__":
-    tr = asyncio.run(get_complete_bus_info(304030))
-    fr = format_bus_info(tr)
-    print(fr)
+    parser = argparse.ArgumentParser(description="TaiwanBus")
+    subparsers = parser.add_subparsers(dest="cmd",
+                                       help='可用的指令為: \n' +
+                                            'updatedb, showroute\n')
+    parser_updatedb = subparsers.add_parser("updatedb", help="更新公車資料庫")
+    parser_showroute = subparsers.add_parser("showroute", help="顯示公車路線狀態")
+    parser_searchroute = subparsers.add_parser("searchroute", help="查詢路線")
+    parser_searchstop = subparsers.add_parser("searchstop", help="查詢站點")
+    parser_showroute.add_argument("-r", "--routeid", help="路線ID", type=int, dest="routeid", required=True)
+    parser_searchroute.add_argument("-r", "--routename", help="路線名", type=str, dest="routename", required=True)
+    parser_searchstop.add_argument("-s", "--stopname", help="站點名", type=str, dest="stopname", required=True)
+    args = parser.parse_args()
+    try:
+        if args.cmd == "updatedb":
+            print("正在更新資料庫...")
+            update_database(info=True)
+            print("資料庫更新成功。")
+        elif args.cmd == "showroute":
+            data = asyncio.run(get_complete_bus_info(args.routeid)
+            print(format_bus_info(data))
+        elif args.cmd == "searchroute":
+            print("開發中...")
+        elif args.cmd == "searchstop":
+            print("開發中...")
+    except Exception as e:
+        print("錯誤！")
+        print(e)
