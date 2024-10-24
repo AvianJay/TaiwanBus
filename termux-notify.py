@@ -4,6 +4,7 @@ import time
 import twbus
 import asyncio
 import argparse
+globaldata= {"route": "", "stop": "", "sec": 0, "usersec": 0, "msg": "", "bus": []}
 
 async def gettime(route, stopid):
     stop_info = 0
@@ -44,6 +45,7 @@ async def gettimeformat(route, stopid):
                     msg = stop["msg"]
                     sec = stop["sec"]
                     buses = stop["bus"]
+                    
 
                     # 判斷是否顯示msg或剩餘時間
                     if msg:
@@ -63,8 +65,28 @@ async def gettimeformat(route, stopid):
                             stop_info += f" [{bus_id} {bus_full}]"
     return stop_info
 
-def send_notify(msg):
+def send_notify(title, msg):
     os.system(f"termux-notification -t 公車 -i termuxtwbus -c \"{msg}\"")
+
+def realtime_notify():
+    global globaldata
+    while True:
+        if globaldata["usersec"] >= globaldata["sec"]:
+            if globaldata["msg"]:
+                stop_info = f"{globaldata["stop"]} {globaldata["msg"]}\n"
+            elif globaldata["sec"] and globaldata["sec"] > 0:
+                minutes = globaldata["sec"] // 60
+                seconds = globaldata["sec"] % 60
+                stop_info = f"{globaldata["stop"]} 還有{minutes}分{seconds}秒"
+            else:
+                stop_info = f"{stop_name} 進站中"
+
+            if globaldata["bus"]:
+                for bus in buses:
+                    bus_id = bus["id"]
+                    bus_full = "已滿" if bus["full"] == "1" else "未滿"
+                    stop_info += f" [{bus_id} {bus_full}]"
+    
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="TaiwanBus for Termux")
@@ -85,16 +107,17 @@ if __name__=="__main__":
         while True:
             msg = asyncio.run(gettimeformat(args.routeid, args.stopid))
             print("got bus", msg)
-            send_notify(msg)
+            send_notify("公車", msg)
             print("sent notify now waiting")
             time.sleep(args.waittime)
     else:
         while True:
-            print("remain", asyncio.run(gettime(args.routeid, args.stopid)))
-            if args.intimenotify > asyncio.run(gettime(args.routeid, args.stopid)):
+            remain = asyncio.run(gettime(args.routeid, args.stopid))
+            print("remain", remain)
+            if args.intimenotify > remain:
                 print("send msg")
                 msg = asyncio.run(gettimeformat(args.routeid, args.stopid))
                 print("got bus", msg)
-                send_notify(msg)
+                send_notify("公車", msg)
             print("waiting")
             time.sleep(args.checktime)

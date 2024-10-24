@@ -213,7 +213,9 @@ if __name__ == "__main__":
             data = asyncio.run(get_complete_bus_info(args.routeid))
             print(format_bus_info(data))
         elif args.cmd == "searchroute":
-            print("開發中...")
+            rs = asyncio.run(fetch_routes_byname(args.routename))
+            for r in rs:
+                print(r["route_key"], r["route_name"], r["description"])
         elif args.cmd == "searchstop":
             print("開發中...")
     except Exception as e:
