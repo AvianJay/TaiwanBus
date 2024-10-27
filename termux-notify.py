@@ -72,12 +72,13 @@ def realtime_notify():
     global globaldata
     while True:
         if globaldata["usersec"] >= globaldata["sec"]:
+            stop_info = ""
             if globaldata["msg"]:
-                stop_info = f"{globaldata["stop"]} {globaldata["msg"]}\n"
+                stop_info = f"{globaldata['stop']} {globaldata['msg']}\n"
             elif globaldata["sec"] and globaldata["sec"] > 0:
                 minutes = globaldata["sec"] // 60
                 seconds = globaldata["sec"] % 60
-                stop_info = f"{globaldata["stop"]} 還有{minutes}分{seconds}秒"
+                stop_info = f"{globaldata['stop']} 還有{minutes}分{seconds}秒"
             else:
                 stop_info = f"{stop_name} 進站中"
 
