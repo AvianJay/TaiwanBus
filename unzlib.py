@@ -1,3 +1,5 @@
+# My code is shit.
+# unzlib.py: tool to uncompress zlib things
 import sys
 import zlib
 
