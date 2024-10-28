@@ -1,3 +1,5 @@
+# My code is shit.
+# Main file for TaiwanBus.
 import os
 import sys
 import requests
