@@ -1,8 +1,17 @@
 # TaiwanBus
 台灣公車
 # 前置作業
+複製儲存庫
+```shell
+git clone https://github.com/AvianJay/TaiwanBus
+```
+下載/更新依賴庫
 ```shell
 pip install -m requirements.txt
+python twbus.py updatedb
+```
+更新公車資料庫
+```shell
 python twbus.py updatedb
 ```
 # Termux
