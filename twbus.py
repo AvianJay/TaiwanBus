@@ -145,9 +145,8 @@ async def get_complete_bus_info(route_key):
             "name": path_name,
             "stops": path_stops
         }
-
+    # sort by sequence 
     for path_id, path_data in result.items():
-        # 將 stops 依據 sequence 欄位排序
         path_data['stops'] = sorted(path_data['stops'], key=lambda x: x['sequence'])
 
     return result
@@ -161,12 +160,11 @@ def format_bus_info(json_data):
         
         stops = path_data["stops"]
         for i, stop in enumerate(stops):
-            stop_name = stop["stop_name"].strip()  # 去除可能的空白字符
+            stop_name = stop["stop_name"].strip()
             msg = stop["msg"]
             sec = stop["sec"]
             buses = stop["bus"]
 
-            # 判斷是否顯示msg或剩餘時間
             if msg:
                 stop_info = f"{stop_name} {msg}\n"
             elif sec and int(sec) > 0:
@@ -174,7 +172,7 @@ def format_bus_info(json_data):
                 seconds = int(sec) % 60
                 stop_info = f"{stop_name} 還有{minutes}分{seconds}秒\n"
             else:
-                stop_info = f"{stop_name} 即將進站\n"
+                stop_info = f"{stop_name} 進站中\n"
 
             # 添加公車資訊
             if buses:
@@ -185,9 +183,9 @@ def format_bus_info(json_data):
             
             # 使用適當的分隔符顯示站點結構
             if i == len(stops) - 1:
-                result += f"└{stop_info}"
+                result += f" └──{stop_info}"
             else:
-                result += f"├{stop_info}"
+                result += f" ├──{stop_info}"
 
     return result
 
