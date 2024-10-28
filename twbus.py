@@ -217,7 +217,16 @@ if __name__ == "__main__":
             for r in rs:
                 print(r["route_key"], r["route_name"], r["description"])
         elif args.cmd == "searchstop":
-            print("開發中...")
+            stops = asyncio.run(fetch_stops_byname(args.stopname))
+            for stop in stops:
+                route = asyncio.run(fetch_route(stop["route_key"]))[0]
+                paths = asyncio.run(fetch_paths(stop["route_key"]))
+                cpath = None
+                for p in paths:
+                    if stop["path_id"] == p["path_id"]:
+                        cpath = p
+                print(f"{route['provider']} {route['route_name']}[{route['route_key']}] {cpath['path_name']}[{cpath['path_id']}] {stop['stop_name']}[{stop['stop_id']}]")
+                
     except Exception as e:
         print("錯誤！")
         print(e)
