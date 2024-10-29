@@ -5,12 +5,13 @@ import twbus
 import asyncio
 import argparse
 
-globaldata = {"route": "", "stop": "", "sec": 0, "usersec": 0, "msg": "", "bus": [], "recentnotify": "", "realtime": False}
+globaldata = {"route": "", "stop": "", "path": "", "sec": 0, "usersec": 0, "msg": "", "bus": [], "recentnotify": "", "realtime": False}
 
-async def gettime(route, stopid):
-    rn = await twbus.fetch_route(route)
+async def gettime(stopid):
+    st = await twbus.fetch_stop(stopid)
+    rn = await twbus.fetch_route(st[0]["route_key"])
     stop_info = {"route": rn[0]["route_name"], "stop": "", "sec": 0, "bus": {}, "msg": ""}
-    route_info = await twbus.get_complete_bus_info(route)
+    route_info = await twbus.get_complete_bus_info(st[0]["route_key"])
     for path_id, path_data in route_info.items():
         route_name = path_data["name"]
         stops = path_data["stops"]
@@ -74,8 +75,10 @@ async def realtime_notify():
                     bus_id = bus["id"]
                     bus_full = "已滿" if bus["full"] == "1" else "未滿"
                     stop_info += f" [{bus_id} {bus_full}]"
-            send_notify(globaldata["route"], stop_info)
+            send_notify(f"{globaldata['route']}[{globaldata['path']}]", stop_info)
         if globaldata["sec"] < 0:
+            globaldata["sec"] = 999999999
+        if not globaldata["realtime"]:
             globaldata["sec"] = 999999999
         await asyncio.sleep(.6)
 
@@ -86,19 +89,25 @@ async def realtime_counter():
 
 async def main(args):
     if args.cmd == "keep":
+        stop = await twbus.fetch_stop(stopid)
+        routeid = stop[0]["route_key"]
+        route = await twbus.fetch_route(routeid)
         while True:
-            msg = await gettimeformat(args.routeid, args.stopid)
+            msg = await gettimeformat(routeid, args.stopid)
             print("got bus", msg)
-            send_notify("公車", msg)
+            send_notify(route[0]["route_name"], msg)
             print("sent notify now waiting")
             await asyncio.sleep(args.waittime)
-    else:
+    elif args.cmd == "time":
+        path = await twbus.fetch_path_by_stop(args.stopid)
+        globaldata["path"] = path[0]["path_name"]
         asyncio.create_task(realtime_notify())
         asyncio.create_task(realtime_counter())
         globaldata["usersec"] = args.intimenotify
         globaldata["sec"] = 999999
+        globaldata["realtime"] = args.realtime
         while True:
-            data = await gettime(args.routeid, args.stopid)
+            data = await gettime(args.stopid)
             print("remain", data["sec"])
             globaldata.update(data)
             print("waiting")
@@ -106,15 +115,18 @@ async def main(args):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="TaiwanBus for Termux")
-    subparsers = parser.add_subparsers(dest="cmd", help='可用的指令為: \nkeep, time\n')
+    subparsers = parser.add_subparsers(dest="cmd")
     parser_keep = subparsers.add_parser("keep", help="持續發送模式")
     parser_time = subparsers.add_parser("time", help="在快到站的時候發送")
-    parser_keep.add_argument("-r", "--routeid", help="公車ID", type=int, dest="routeid", required=True)
-    parser_keep.add_argument("-s", "--stopid", help="車站ID", type=int, dest="stopid", required=True)
-    parser_keep.add_argument("-t", "--time", help="發送間隔時間", type=int, dest="waittime", required=True)
-    parser_time.add_argument("-r", "--routeid", help="公車ID", type=int, dest="routeid", required=True)
-    parser_time.add_argument("-s", "--stopid", help="車站ID", type=int, dest="stopid", required=True)
-    parser_time.add_argument("-t", "--time", help="當公車在幾秒內到站提醒", type=int, dest="intimenotify", required=True)
-    parser_time.add_argument("-c", "--checktime", help="檢查間隔時間", type=int, dest="checktime", required=True)
+    parser_keep.add_argument("stopid", help="車站ID", type=int)
+    parser_keep.add_argument("-t", "--time", help="發送間隔時間", type=int, dest="waittime", default=60)
+    parser_time.add_argument("stopid", help="車站ID", type=int)
+    parser_time.add_argument("-t", "--time", help="當公車在幾秒內到站提醒", type=int, dest="intimenotify", default=300)
+    parser_time.add_argument("-c", "--checktime", help="檢查間隔時間", type=int, dest="checktime", default=60)
+    parser_time.add_argument("-r", "--realtime", help="即時發送訊息", dest="realtime", action='store_true', default=False)
     args = parser.parse_args()
-    asyncio.run(main(args))
+    try:
+        asyncio.run(main(args))
+    except KeyboardInterrupt:
+        print("Stopping!")
+        sys.exit(0)

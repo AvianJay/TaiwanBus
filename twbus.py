@@ -69,9 +69,31 @@ async def fetch_stops_byname(name: str):
                 result.append(row_dict)
             return result
 
+async def fetch_stop(id: int):
+    async with aiosqlite.connect('bus_tcc.sqlite') as db:
+        async with db.execute("SELECT * FROM stops WHERE stop_id = ?", (id,)) as cursor:
+            columns = [description[0] for description in cursor.description]
+            result = []
+            async for row in cursor:
+                row_dict = dict(zip(columns, row))
+                result.append(row_dict)
+            return result
+
 async def fetch_paths(id: int):
     async with aiosqlite.connect('bus_tcc.sqlite') as db:
         async with db.execute("SELECT * FROM paths WHERE route_key = ?", (id,)) as cursor:
+            columns = [description[0] for description in cursor.description]
+            result = []
+            async for row in cursor:
+                row_dict = dict(zip(columns, row))
+                result.append(row_dict)
+            return result
+
+async def fetch_path_by_stop(id: int):
+    stop = await fetch_stop(id)
+    pathid = stop[0]["path_id"]
+    async with aiosqlite.connect('bus_tcc.sqlite') as db:
+        async with db.execute("SELECT * FROM paths WHERE route_key = ? and path_id = ?", (stop[0]["route_key"], pathid,)) as cursor:
             columns = [description[0] for description in cursor.description]
             result = []
             async for row in cursor:
@@ -200,9 +222,9 @@ if __name__ == "__main__":
     parser_showroute = subparsers.add_parser("showroute", help="顯示公車路線狀態")
     parser_searchroute = subparsers.add_parser("searchroute", help="查詢路線")
     parser_searchstop = subparsers.add_parser("searchstop", help="查詢站點")
-    parser_showroute.add_argument("-r", "--routeid", help="路線ID", type=int, dest="routeid", required=True)
-    parser_searchroute.add_argument("-r", "--routename", help="路線名", type=str, dest="routename", required=True)
-    parser_searchstop.add_argument("-s", "--stopname", help="站點名", type=str, dest="stopname", required=True)
+    parser_showroute.add_argument("routeid", help="路線ID", type=int)
+    parser_searchroute.add_argument("routename", help="路線名", type=str)
+    parser_searchstop.add_argument("stopname", help="站點名", type=str)
     args = parser.parse_args()
     try:
         if args.cmd == "updatedb":
