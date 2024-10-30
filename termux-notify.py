@@ -1,3 +1,6 @@
+# My code is shit.
+# Bus notification for Termux.
+# Termux:API is required.
 import os
 import sys
 import time

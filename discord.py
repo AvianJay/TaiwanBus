@@ -6,7 +6,7 @@ import sys
 from discord.ext import commands
 import aiosqlite
 from datetime import datetime
-import bus
+import twbus
 
 # config
 displayversion = "v0.1 Beta"

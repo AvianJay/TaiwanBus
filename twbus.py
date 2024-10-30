@@ -9,6 +9,9 @@ import aiosqlite
 import json
 import asyncio
 import argparse
+from pathlib import Path
+home = Path.home()
+
 
 def update_database(info=False):
     if info:
@@ -175,7 +178,7 @@ async def get_complete_bus_info(route_key):
 
 def format_bus_info(json_data):
     result = ""
-    
+
     for path_id, path_data in json_data.items():
         route_name = path_data["name"]
         result += f"{route_name}\n"
