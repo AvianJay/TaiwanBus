@@ -10,6 +10,15 @@ import argparse
 
 globaldata = {"route": "", "stop": "", "path": "", "sec": 0, "usersec": 0, "msg": "", "bus": [], "recentnotify": "", "realtime": False}
 
+
+def echo(*msg, level="INFO"):
+    total = ""
+    for m in msg:
+        total += f"{m} "
+    total = total.strip()
+    print(f"[{level}] {total}")
+
+
 async def gettime(stopid):
     st = await twbus.fetch_stop(stopid)
     rn = await twbus.fetch_route(st[0]["route_key"])
@@ -79,6 +88,8 @@ async def realtime_notify():
                     bus_full = "已滿" if bus["full"] == "1" else "未滿"
                     stop_info += f" [{bus_id} {bus_full}]"
             send_notify(f"{globaldata['route']}[{globaldata['path']}]", stop_info)
+        # I know this will not work when time is set to bigger than 999999999.
+        # because I'm too lazy lol
         if globaldata["sec"] < 0:
             globaldata["sec"] = 999999999
         if not globaldata["realtime"]:
@@ -110,10 +121,12 @@ async def main(args):
         globaldata["sec"] = 999999
         globaldata["realtime"] = args.realtime
         while True:
-            data = await gettime(args.stopid)
-            print("remain", data["sec"])
-            globaldata.update(data)
-            print("waiting")
+            try:
+                data = await gettime(args.stopid)
+                echo("Got data", data["sec"])
+                globaldata.update(data)
+            except:
+                echo("無法更新公車資訊。你可能未連接至網際網路。", level="WARN")
             await asyncio.sleep(args.checktime)
 
 if __name__=="__main__":
