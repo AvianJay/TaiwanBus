@@ -90,6 +90,7 @@ async def realtime_notify():
             send_notify(f"{globaldata['route']}[{globaldata['path']}]", stop_info)
         # I know this will not work when time is set to bigger than 999999999.
         # because I'm too lazy lol
+        # but i think no one will break?
         if globaldata["sec"] < 0:
             globaldata["sec"] = 999999999
         if not globaldata["realtime"]:
@@ -107,10 +108,12 @@ async def main(args):
         routeid = stop[0]["route_key"]
         route = await twbus.fetch_route(routeid)
         while True:
-            msg = await gettimeformat(routeid, args.stopid)
-            print("got bus", msg)
-            send_notify(route[0]["route_name"], msg)
-            print("sent notify now waiting")
+            try:
+                msg = await gettimeformat(routeid, args.stopid)
+                echo("Got data", msg)
+                send_notify(route[0]["route_name"], msg)
+            except Exception as e:
+                echo("無法更新公車資訊。你可能未連接至網際網路。", e, level="WARN")
             await asyncio.sleep(args.waittime)
     elif args.cmd == "time":
         path = await twbus.fetch_path_by_stop(args.stopid)
@@ -125,8 +128,8 @@ async def main(args):
                 data = await gettime(args.stopid)
                 echo("Got data", data["sec"])
                 globaldata.update(data)
-            except:
-                echo("無法更新公車資訊。你可能未連接至網際網路。", level="WARN")
+            except Exception as e:
+                echo("無法更新公車資訊。你可能未連接至網際網路。", e, level="WARN")
             await asyncio.sleep(args.checktime)
 
 if __name__=="__main__":
