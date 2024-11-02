@@ -9,11 +9,15 @@ import aiosqlite
 import json
 import asyncio
 import argparse
+import exceptions
 from pathlib import Path
-home = Path.home()
+home = os.path.join(Path.home(), ".taiwanbus")
+if not os.path.exists(home):
+    os.mkdir(home)
+current = os.path.join(home, "bus_tcc.sqlite")
 
 
-def update_database(info=False):
+def update_database(path=home,info=False):
     if info:
         print("取得台中版本資訊...")
     baseurl = requests.get("https://files.bus.yahoo.com/bustracker/data/dataurl_tcc.txt").text
@@ -22,7 +26,7 @@ def update_database(info=False):
     r = requests.get(baseurl + "dat_tcc_zh.gz")
     if info:
         print("正在解壓縮...")
-    open("bus_tcc.sqlite","wb").write(zlib.decompress(r.content))
+    open(os.path.join(path, "bus_tcc.sqlite"),"wb").write(zlib.decompress(r.content))
     if info:
         print("取得台北版本資訊...")
     baseurl = requests.get("https://files.bus.yahoo.com/bustracker/data/dataurl_tpe.txt").text
@@ -31,7 +35,7 @@ def update_database(info=False):
     r = requests.get(baseurl + "dat_tpe_zh.gz")
     if info:
         print("正在解壓縮...")
-    open("bus_tpe.sqlite","wb").write(zlib.decompress(r.content))
+    open(os.path.join(home, "bus_tpe.sqlite"),"wb").write(zlib.decompress(r.content))
     if info:
         print("取得全台版本資訊...")
     baseurl = requests.get("https://files.bus.yahoo.com/bustracker/data/dataurl.txt").text
@@ -40,7 +44,13 @@ def update_database(info=False):
     r = requests.get(baseurl + "dat_twn_zh.gz")
     if info:
         print("正在解壓縮...")
-    open("bus_twn.sqlite","wb").write(zlib.decompress(r.content))
+    open(os.path.join(home, "bus_twn.sqlite"),"wb").write(zlib.decompress(r.content))
+
+
+def checkdb():
+    if not os.path.exists(os.path.join(home, "dat_tcc_zh.gz")) and not os.path.exists(os.path.join(home, "dat_tpe_zh.gz")) and not os.path.exists(os.path.join(home, "dat_twn_zh.gz")):
+        raise exceptions.DatabaseNotFoundError("Cannot find database")
+
 
 async def fetch_route(id: int):
     async with aiosqlite.connect('bus_tcc.sqlite') as db:
@@ -52,8 +62,9 @@ async def fetch_route(id: int):
                 result.append(row_dict)
             return result
 
+
 async def fetch_routes_byname(name: str):
-    async with aiosqlite.connect('bus_tcc.sqlite') as db:
+    async with aiosqlite.connect(current) as db:
         async with db.execute("SELECT * FROM routes WHERE route_name LIKE ?", ('%' + name + '%',)) as cursor:
             columns = [description[0] for description in cursor.description]
             result = []
@@ -62,8 +73,9 @@ async def fetch_routes_byname(name: str):
                 result.append(row_dict)
             return result
 
+
 async def fetch_stops_byname(name: str):
-    async with aiosqlite.connect('bus_tcc.sqlite') as db:
+    async with aiosqlite.connect(current) as db:
         async with db.execute("SELECT * FROM stops WHERE stop_name LIKE ?", ('%' + name + '%',)) as cursor:
             columns = [description[0] for description in cursor.description]
             result = []
@@ -72,8 +84,9 @@ async def fetch_stops_byname(name: str):
                 result.append(row_dict)
             return result
 
+
 async def fetch_stop(id: int):
-    async with aiosqlite.connect('bus_tcc.sqlite') as db:
+    async with aiosqlite.connect(current) as db:
         async with db.execute("SELECT * FROM stops WHERE stop_id = ?", (id,)) as cursor:
             columns = [description[0] for description in cursor.description]
             result = []
@@ -82,8 +95,9 @@ async def fetch_stop(id: int):
                 result.append(row_dict)
             return result
 
+
 async def fetch_paths(id: int):
-    async with aiosqlite.connect('bus_tcc.sqlite') as db:
+    async with aiosqlite.connect(current) as db:
         async with db.execute("SELECT * FROM paths WHERE route_key = ?", (id,)) as cursor:
             columns = [description[0] for description in cursor.description]
             result = []
@@ -92,10 +106,11 @@ async def fetch_paths(id: int):
                 result.append(row_dict)
             return result
 
+
 async def fetch_path_by_stop(id: int):
     stop = await fetch_stop(id)
     pathid = stop[0]["path_id"]
-    async with aiosqlite.connect('bus_tcc.sqlite') as db:
+    async with aiosqlite.connect(current) as db:
         async with db.execute("SELECT * FROM paths WHERE route_key = ? and path_id = ?", (stop[0]["route_key"], pathid,)) as cursor:
             columns = [description[0] for description in cursor.description]
             result = []
@@ -104,8 +119,9 @@ async def fetch_path_by_stop(id: int):
                 result.append(row_dict)
             return result
 
+
 async def fetch_stops_by_route(route_key: int):
-    async with aiosqlite.connect('bus_tcc.sqlite') as db:
+    async with aiosqlite.connect(current) as db:
         async with db.execute("SELECT * FROM stops WHERE route_key = ?", (route_key,)) as cursor:
             columns = [description[0] for description in cursor.description]
             result = []
@@ -113,6 +129,7 @@ async def fetch_stops_by_route(route_key: int):
                 row_dict = dict(zip(columns, row))
                 result.append(row_dict)
             return result
+
 
 def getbus(id):
     r = requests.get(f"https://busserver.bus.yahoo.com/api/route/{id}")
@@ -131,6 +148,7 @@ def getbus(id):
             t["bus"].append(b)
         j.append(t)
     return j
+
 
 async def get_complete_bus_info(route_key):
     route_info = await fetch_route(route_key)
@@ -176,13 +194,14 @@ async def get_complete_bus_info(route_key):
 
     return result
 
+
 def format_bus_info(json_data):
     result = ""
 
     for path_id, path_data in json_data.items():
         route_name = path_data["name"]
         result += f"{route_name}\n"
-        
+
         stops = path_data["stops"]
         for i, stop in enumerate(stops):
             stop_name = stop["stop_name"].strip()
@@ -199,14 +218,13 @@ def format_bus_info(json_data):
             else:
                 stop_info = f"{stop_name} 進站中\n"
 
-            # 添加公車資訊
+            # add bus data
             if buses:
                 for bus in buses:
                     bus_id = bus["id"]
                     bus_full = "已滿" if bus["full"] == "1" else "未滿"
                     stop_info += f" │  └── {bus_id} {bus_full}\n"
-            
-            # 使用適當的分隔符顯示站點結構
+
             if i == len(stops) - 1:
                 result += f" └──{stop_info}"
             else:
@@ -216,7 +234,7 @@ def format_bus_info(json_data):
 
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="TaiwanBus")
     subparsers = parser.add_subparsers(dest="cmd",
                                        help='可用的指令為: \n' +
@@ -251,6 +269,8 @@ if __name__ == "__main__":
                     if stop["path_id"] == p["path_id"]:
                         cpath = p
                 print(f"{route['provider']} {route['route_name']}[{route['route_key']}] {cpath['path_name']}[{cpath['path_id']}] {stop['stop_name']}[{stop['stop_id']}]")
+        else:
+            print("使用", sys.argv[0], "來取得幫助。")
                 
     except Exception as e:
         print("錯誤！")

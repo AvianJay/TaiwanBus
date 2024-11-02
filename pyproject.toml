@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "TaiwanBus"
+authors = [
+    {name = "AvianJay", email = "avianjayusb@gmail.com"}
+]
+description = "Taiwan Bus API for Python"
+version = "0.0.1"
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    "requests > 2.26.0",
+    "aiosqlite > 0.20.0"
+]
+
+[project.scripts]
+youbike = "taiwanbus:main"
