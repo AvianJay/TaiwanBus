@@ -273,10 +273,6 @@ def main():
     parser = argparse.ArgumentParser(description="TaiwanBus")
     subparsers = parser.add_subparsers(
         dest="cmd",
-        help=(
-            '可用的指令為: \n'
-            'updatedb, showroute\n'
-        ),
     )
     # parser_updatedb = subparsers.add_parser("updatedb", help="更新公車資料庫")
     subparsers.add_parser("updatedb", help="更新公車資料庫")
