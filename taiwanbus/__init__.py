@@ -9,7 +9,7 @@ import aiosqlite
 import json
 import asyncio
 import argparse
-import exceptions
+import taiwanbus.exceptions
 from pathlib import Path
 home = os.path.join(Path.home(), ".taiwanbus")
 if not os.path.exists(home):
@@ -64,6 +64,7 @@ async def fetch_route(id: int):
 
 
 async def fetch_routes_byname(name: str):
+    checkdb()
     async with aiosqlite.connect(current) as db:
         async with db.execute("SELECT * FROM routes WHERE route_name LIKE ?", ('%' + name + '%',)) as cursor:
             columns = [description[0] for description in cursor.description]
@@ -75,6 +76,7 @@ async def fetch_routes_byname(name: str):
 
 
 async def fetch_stops_byname(name: str):
+    checkdb()
     async with aiosqlite.connect(current) as db:
         async with db.execute("SELECT * FROM stops WHERE stop_name LIKE ?", ('%' + name + '%',)) as cursor:
             columns = [description[0] for description in cursor.description]
@@ -86,6 +88,7 @@ async def fetch_stops_byname(name: str):
 
 
 async def fetch_stop(id: int):
+    checkdb()
     async with aiosqlite.connect(current) as db:
         async with db.execute("SELECT * FROM stops WHERE stop_id = ?", (id,)) as cursor:
             columns = [description[0] for description in cursor.description]
