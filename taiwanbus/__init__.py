@@ -18,33 +18,44 @@ current = os.path.join(home, "bus_tcc.sqlite")
 
 
 def update_database(path=home,info=False):
+    local = {"tcc": 0, "tpe": 0, "twn": 0}
+    version_path = os.path.join(home, "version.json")
+    if os.path.exists(version_path):
+        local = json.loads(open(version_path, "r").read())
     if info:
         print("取得台中版本資訊...")
     baseurl = requests.get("https://files.bus.yahoo.com/bustracker/data/dataurl_tcc.txt").text
-    if info:
-        print("下載台中版資料庫...")
-    r = requests.get(baseurl + "dat_tcc_zh.gz")
-    if info:
-        print("正在解壓縮...")
-    open(os.path.join(path, "bus_tcc.sqlite"),"wb").write(zlib.decompress(r.content))
+    if local["tcc"] < int(baseurl.split("/")[-2]):
+        if info:
+            print("下載台中版資料庫...")
+        r = requests.get(baseurl + "dat_tcc_zh.gz")
+        if info:
+            print("正在解壓縮...")
+        open(os.path.join(path, "bus_tcc.sqlite"),"wb").write(zlib.decompress(r.content))
+        local["tcc"] = int(baseurl.split("/")[-2])
     if info:
         print("取得台北版本資訊...")
     baseurl = requests.get("https://files.bus.yahoo.com/bustracker/data/dataurl_tpe.txt").text
-    if info:
-        print("下載台北版資料庫...")
-    r = requests.get(baseurl + "dat_tpe_zh.gz")
-    if info:
-        print("正在解壓縮...")
-    open(os.path.join(home, "bus_tpe.sqlite"),"wb").write(zlib.decompress(r.content))
+    if local["tpe"] < int(baseurl.split("/")[-2]):
+        if info:
+            print("下載台北版資料庫...")
+        r = requests.get(baseurl + "dat_tpe_zh.gz")
+        if info:
+            print("正在解壓縮...")
+        open(os.path.join(home, "bus_tpe.sqlite"),"wb").write(zlib.decompress(r.content))
+        local["tcc"] = int(baseurl.split("/")[-2])
     if info:
         print("取得全台版本資訊...")
     baseurl = requests.get("https://files.bus.yahoo.com/bustracker/data/dataurl.txt").text
-    if info:
-        print("下載全台版資料庫（無站點資訊）...")
-    r = requests.get(baseurl + "dat_twn_zh.gz")
-    if info:
-        print("正在解壓縮...")
-    open(os.path.join(home, "bus_twn.sqlite"),"wb").write(zlib.decompress(r.content))
+    if local["twn"] < int(baseurl.split("/")[-2]):
+        if info:
+            print("下載全台版資料庫（無站點資訊）...")
+        r = requests.get(baseurl + "dat_twn_zh.gz")
+        if info:
+            print("正在解壓縮...")
+        open(os.path.join(home, "bus_twn.sqlite"),"wb").write(zlib.decompress(r.content))
+        local["tcc"] = int(baseurl.split("/")[-2])
+    open(version_path, "w").write(json.dumps(local))
 
 
 def checkdb():
