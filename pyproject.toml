@@ -8,7 +8,7 @@ authors = [
     {name = "AvianJay", email = "avianjayusb@gmail.com"}
 ]
 description = "Taiwan Bus API for Python"
-version = "0.0.2"
+version = "0.0.3"
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
@@ -17,4 +17,4 @@ dependencies = [
 ]
 
 [project.scripts]
-youbike = "taiwanbus:main"
+taiwanbus = "taiwanbus:main"
