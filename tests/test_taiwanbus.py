@@ -7,8 +7,8 @@ class TestTaiwanBus(unittest.TestCase):
 
     def test_taiwanbus(self):
         taiwanbus.updatedb()
-        data = youbike.getdata()
-        self.assertIsInstance(data, list, "getdata() should return a list")
+        data = asyncio.run(taiwanbus.fetch_route(304030))
+        self.assertIsInstance(data, list, "fetch_route() should return a list")
 
 
 if __name__ == '__main__':
