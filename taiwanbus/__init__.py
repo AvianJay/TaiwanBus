@@ -243,15 +243,18 @@ async def get_complete_bus_info(route_key):
 
 def format_bus_info(json_data):
     result = ""
+
     for path_id, path_data in json_data.items():
         route_name = path_data["name"]
         result += f"{route_name}\n"
+        
         stops = path_data["stops"]
         for i, stop in enumerate(stops):
             stop_name = stop["stop_name"].strip()
             msg = stop["msg"]
             sec = stop["sec"]
             buses = stop["bus"]
+
             if msg:
                 stop_info = f"{stop_name} {msg}\n"
             elif sec and int(sec) > 0:
@@ -260,12 +263,20 @@ def format_bus_info(json_data):
                 stop_info = f"{stop_name} 還有{minutes}分{seconds}秒\n"
             else:
                 stop_info = f"{stop_name} 進站中\n"
+
+            # 添加公車資訊
             if buses:
                 for bus in buses:
                     bus_id = bus["id"]
-                    bus_status = bus["msg"]
-                    stop_info += f"{bus_id} - {bus_status}\n"
-            result += stop_info + "\n"
+                    bus_full = "已滿" if bus["full"] == "1" else "未滿"
+                    stop_info += f" │  └── {bus_id} {bus_full}\n"
+            
+            # 使用適當的分隔符顯示站點結構
+            if i == len(stops) - 1:
+                result += f" └──{stop_info}"
+            else:
+                result += f" ├──{stop_info}"
+
     return result
 
 
