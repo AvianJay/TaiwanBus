@@ -52,7 +52,7 @@ def update_database(path=home, info=False):
         open(os.path.join(home, "bus_tpe.sqlite"), "wb").write(
             zlib.decompress(r.content)
         )
-        local["tcc"] = int(baseurl.split("/")[-2])
+        local["tpe"] = int(baseurl.split("/")[-2])
     if info:
         print("取得全台版本資訊...")
     baseurl = requests.get(
@@ -67,16 +67,16 @@ def update_database(path=home, info=False):
         open(os.path.join(home, "bus_twn.sqlite"), "wb").write(
             zlib.decompress(r.content)
         )
-        local["tcc"] = int(baseurl.split("/")[-2])
+        local["twn"] = int(baseurl.split("/")[-2])
     open(version_path, "w").write(json.dumps(local))
 
 
 def checkdb(database_directory=home):
 
     file_paths = [
-        os.path.join(database_directory, "dat_tcc_zh.gz"),
-        os.path.join(database_directory, "dat_tpe_zh.gz"),
-        os.path.join(database_directory, "dat_twn_zh.gz"),
+        os.path.join(database_directory, "bus_tcc.sqlite"),
+        os.path.join(database_directory, "bus_tpe.sqlite"),
+        os.path.join(database_directory, "bus_twn.sqlite"),
     ]
 
     if not any(os.path.exists(path) for path in file_paths):
