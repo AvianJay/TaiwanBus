@@ -7,7 +7,7 @@ git clone https://github.com/AvianJay/TaiwanBus
 ```
 下載/更新
 ```shell
-pip install TaiwanBus -u
+pip install TaiwanBus -U
 ```
 更新公車資料庫
 ```shell
