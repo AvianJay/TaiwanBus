@@ -247,7 +247,7 @@ def format_bus_info(json_data):
     for path_id, path_data in json_data.items():
         route_name = path_data["name"]
         result += f"{route_name}\n"
-        
+
         stops = path_data["stops"]
         for i, stop in enumerate(stops):
             stop_name = stop["stop_name"].strip()
@@ -270,7 +270,7 @@ def format_bus_info(json_data):
                     bus_id = bus["id"]
                     bus_full = "已滿" if bus["full"] == "1" else "未滿"
                     stop_info += f" │  └── {bus_id} {bus_full}\n"
-            
+
             # 使用適當的分隔符顯示站點結構
             if i == len(stops) - 1:
                 result += f" └──{stop_info}"
