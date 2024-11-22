@@ -178,7 +178,9 @@ async def fetch_path_by_stop(id: int):
 async def fetch_stops_by_route(route_key: int):
     checkdb()
     if "bus_twn.sqlite" in current:
-        r = requests.get(f"https://files.bus.yahoo.com/bustracker/routes/{route_key}_zh.dat")
+        r = requests.get(
+            f"https://files.bus.yahoo.com/bustracker/routes/{route_key}_zh.dat"
+        )
         d = zlib.decompress(r.content).decode()
         x = et.XML(d)
         ss = []
@@ -322,7 +324,13 @@ def main():
     subparsers = parser.add_subparsers(
         dest="cmd", required=True
     )
-    parser.add_argument("-p", "--provider", help="資料庫", dest="provider", default="twn", type=str)
+    parser.add_argument(
+        "-p", "--provider",
+        help="資料庫",
+        dest="provider",
+        default="twn",
+        type=str
+    )
     # parser_updatedb = subparsers.add_parser("updatedb", help="更新公車資料庫")
     subparsers.add_parser("updatedb", help="更新公車資料庫")
     parser_showroute = subparsers.add_parser("showroute", help="顯示公車路線狀態")
