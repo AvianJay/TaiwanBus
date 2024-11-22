@@ -12,3 +12,7 @@ class RouteNotFoundError(Exception):
 
 class StopNotFoundError(Exception):
     pass
+
+
+class UnsupportedDatabaseError(Exception):
+    pass

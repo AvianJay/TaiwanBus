@@ -15,7 +15,7 @@ from pathlib import Path
 home = os.path.join(Path.home(), ".taiwanbus")
 if not os.path.exists(home):
     os.mkdir(home)
-current = os.path.join(home, "bus_tcc.sqlite")
+current = os.path.join(home, "bus_twn.sqlite")
 
 
 def update_database(path=home, info=False):
@@ -71,7 +71,7 @@ def update_database(path=home, info=False):
     open(version_path, "w").write(json.dumps(local))
 
 
-def checkdb(database_directory=home):
+def checkdb(database_directory=home, only_stop=False):
 
     file_paths = [
         os.path.join(database_directory, "bus_tcc.sqlite"),
@@ -82,9 +82,13 @@ def checkdb(database_directory=home):
     if not any(os.path.exists(path) for path in file_paths):
         raise taiwanbus.exceptions.DatabaseNotFoundError(
             "Cannot find database")
+    if "bus_twn.sqlite" in current and only_stop:
+        raise taiwanbus.exceptions.UnsupportedDatabaseError(
+            "No stops data in twn")
 
 
 async def fetch_route(id: int):
+    checkdb()
     async with aiosqlite.connect(current) as db:
         async with db.execute(
             "SELECT * FROM routes WHERE route_key = ?", (id, )
@@ -113,7 +117,7 @@ async def fetch_routes_byname(name: str):
 
 
 async def fetch_stops_byname(name: str):
-    checkdb()
+    checkdb(only_stop=True)
     async with aiosqlite.connect(current) as db:
         async with db.execute(
             "SELECT * FROM stops WHERE stop_name LIKE ?", ('%' + name + '%', )
@@ -127,7 +131,7 @@ async def fetch_stops_byname(name: str):
 
 
 async def fetch_stop(id: int):
-    checkdb()
+    checkdb(only_stop=True)
     async with aiosqlite.connect(current) as db:
         async with db.execute(
             "SELECT * FROM stops WHERE stop_id = ?", (id, )
@@ -141,6 +145,7 @@ async def fetch_stop(id: int):
 
 
 async def fetch_paths(id: int):
+    checkdb()
     async with aiosqlite.connect(current) as db:
         async with db.execute(
             "SELECT * FROM paths WHERE route_key = ?", (id, )
@@ -154,6 +159,7 @@ async def fetch_paths(id: int):
 
 
 async def fetch_path_by_stop(id: int):
+    checkdb()
     stop = await fetch_stop(id)
     pathid = stop[0]["path_id"]
     async with aiosqlite.connect(current) as db:
@@ -170,6 +176,37 @@ async def fetch_path_by_stop(id: int):
 
 
 async def fetch_stops_by_route(route_key: int):
+    checkdb()
+    if "bus_twn.sqlite" in current:
+        r = requests.get(f"https://files.bus.yahoo.com/bustracker/routes/{route_key}_zh.dat")
+        d = zlib.decompress(r.content).decode()
+        x = et.XML(d)
+        ss = []
+        for r in x:
+            rk = 0
+            for ri in r.items():
+                if ri[0] == "key":
+                    rk = int(ri[1])
+            for p in r:
+                pid = 0
+                for pi in p.items():
+                    if pi[0] == "id":
+                        pid = int(pi[1])
+                for s in p:
+                    j = {}
+                    j["route_key"] = rk
+                    j["path_id"] = pid
+                    for si in s.items():
+                        if si[0] == "id":
+                            j["stop_id"] = int(si[1])
+                        elif si[0] == "nm":
+                            j["stop_name"] = si[1]
+                        elif si[0] == "seq":
+                            j["sequence"] = si[1]
+                        else:
+                            j[si[0]] = si[1]
+                    ss.append(j)
+        return ss
     async with aiosqlite.connect(current) as db:
         async with db.execute(
             "SELECT * FROM stops WHERE route_key = ?", (route_key, )
@@ -283,8 +320,9 @@ def format_bus_info(json_data):
 def main():
     parser = argparse.ArgumentParser(description="TaiwanBus")
     subparsers = parser.add_subparsers(
-        dest="cmd",
+        dest="cmd", required=True
     )
+    parser.add_argument("-p", "--provider", help="資料庫", dest="provider", default="twn", type=str)
     # parser_updatedb = subparsers.add_parser("updatedb", help="更新公車資料庫")
     subparsers.add_parser("updatedb", help="更新公車資料庫")
     parser_showroute = subparsers.add_parser("showroute", help="顯示公車路線狀態")
@@ -296,6 +334,8 @@ def main():
     args = parser.parse_args()
 
     try:
+        global current
+        current = os.path.join(home, f"bus_{args.provider}.sqlite")
         if args.cmd == "updatedb":
             print("正在更新資料庫...")
             update_database(info=True)
