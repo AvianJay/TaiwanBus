@@ -16,3 +16,7 @@ class StopNotFoundError(Exception):
 
 class UnsupportedDatabaseError(Exception):
     pass
+
+
+class InvaildProvider(Exception):
+    pass

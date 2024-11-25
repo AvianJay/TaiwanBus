@@ -18,6 +18,16 @@ if not os.path.exists(home):
 current = os.path.join(home, "bus_twn.sqlite")
 
 
+def update_provider(provider):
+    global current
+    providers = ["tcc", "tpe", "twn"]
+    if provider in providers:
+        current = os.path.join(home, f"bus_{provider}.sqlite")
+    else:
+        raise taiwanbus.exceptions.InvaildProvider(
+            f"Invaild provider {provider}")
+
+
 def update_database(path=home, info=False):
     local = {"tcc": 0, "tpe": 0, "twn": 0}
     version_path = os.path.join(home, "version.json")
@@ -101,7 +111,7 @@ async def fetch_route(id: int):
             return result
 
 
-async def fetch_routes_byname(name: str):
+async def fetch_routes_by_name(name: str):
     checkdb()
     async with aiosqlite.connect(current) as db:
         async with db.execute(
@@ -116,7 +126,7 @@ async def fetch_routes_byname(name: str):
             return result
 
 
-async def fetch_stops_byname(name: str):
+async def fetch_stops_by_name(name: str):
     checkdb(only_stop=True)
     async with aiosqlite.connect(current) as db:
         async with db.execute(
@@ -248,7 +258,7 @@ async def get_complete_bus_info(route_key):
     result = {}
 
     for path in paths:
-        path_id = path['path_id']
+        path_id = int(path['path_id'])
         path_name = path['path_name']
         path_stops = []
         for stop in stops:
@@ -326,7 +336,7 @@ def main():
     )
     parser.add_argument(
         "-p", "--provider",
-        help="資料庫",
+        help="區域資料庫",
         dest="provider",
         default="twn",
         type=str
@@ -342,8 +352,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        global current
-        current = os.path.join(home, f"bus_{args.provider}.sqlite")
+        update_provider(args.provider)
         if args.cmd == "updatedb":
             print("正在更新資料庫...")
             update_database(info=True)
@@ -354,12 +363,12 @@ def main():
             print(format_bus_info(data))
 
         elif args.cmd == "searchroute":
-            rs = asyncio.run(fetch_routes_byname(args.routename))
+            rs = asyncio.run(fetch_routes_by_name(args.routename))
             for r in rs:
                 print(r["route_key"], r["route_name"], r["description"])
 
         elif args.cmd == "searchstop":
-            stops = asyncio.run(fetch_stops_byname(args.stopname))
+            stops = asyncio.run(fetch_stops_by_name(args.stopname))
             for stop in stops:
                 route = asyncio.run(fetch_route(stop["route_key"]))[0]
                 paths = asyncio.run(fetch_paths(stop["route_key"]))
