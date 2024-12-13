@@ -28,13 +28,40 @@ def update_provider(provider):
             f"Invaild provider {provider}")
 
 
-def update_database(path=home, info=False):
+def check_database_update(path=home):
     local = {"tcc": 0, "tpe": 0, "twn": 0}
-    version_path = os.path.join(home, "version.json")
+    version_path = os.path.join(path, "version.json")
     if os.path.exists(version_path):
         local = json.loads(open(version_path, "r").read())
-    if info:
-        print("取得台中版本資訊...")
+    baseurl = requests.get(
+        "https://files.bus.yahoo.com/bustracker/data/dataurl_tcc.txt"
+    ).text
+    if local["tcc"] < int(baseurl.split("/")[-2]):
+        local["tcc"] = int(baseurl.split("/")[-2])
+    else:
+        local["tcc"] = False
+    baseurl = requests.get(
+        "https://files.bus.yahoo.com/bustracker/data/dataurl_tpe.txt"
+    ).text
+    if local["tpe"] < int(baseurl.split("/")[-2]):
+        local["tpe"] = int(baseurl.split("/")[-2])
+    else:
+        local["tpe"] = False
+    baseurl = requests.get(
+        "https://files.bus.yahoo.com/bustracker/data/dataurl.txt"
+    ).text
+    if local["twn"] < int(baseurl.split("/")[-2]):
+        local["twn"] = int(baseurl.split("/")[-2])
+    else:
+        local["twn"] = False
+    return local
+
+
+def update_database(path=home, info=False):
+    local = {"tcc": 0, "tpe": 0, "twn": 0}
+    version_path = os.path.join(path, "version.json")
+    if os.path.exists(version_path):
+        local = json.loads(open(version_path, "r").read())
     baseurl = requests.get(
         "https://files.bus.yahoo.com/bustracker/data/dataurl_tcc.txt"
     ).text
@@ -81,18 +108,11 @@ def update_database(path=home, info=False):
     open(version_path, "w").write(json.dumps(local))
 
 
-def checkdb(database_directory=home, only_stop=False):
-
-    file_paths = [
-        os.path.join(database_directory, "bus_tcc.sqlite"),
-        os.path.join(database_directory, "bus_tpe.sqlite"),
-        os.path.join(database_directory, "bus_twn.sqlite"),
-    ]
-
-    if not any(os.path.exists(path) for path in file_paths):
+def checkdb(path=current, only_stop=False):
+    if not os.path.exists(path):
         raise taiwanbus.exceptions.DatabaseNotFoundError(
             "Cannot find database")
-    if "bus_twn.sqlite" in current and only_stop:
+    if "bus_twn.sqlite" in path and only_stop:
         raise taiwanbus.exceptions.UnsupportedDatabaseError(
             "No stops data in twn")
 
