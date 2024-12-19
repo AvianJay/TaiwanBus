@@ -361,8 +361,14 @@ def main():
         default="twn",
         type=str
     )
-    # parser_updatedb = subparsers.add_parser("updatedb", help="更新公車資料庫")
-    subparsers.add_parser("updatedb", help="更新公車資料庫")
+    parser_updatedb = subparsers.add_parser("updatedb", help="更新公車資料庫")
+    parser_updatedb.add_argument(
+        "-c",
+        "--check-only",
+        dest="checkonly",
+        action='store_true',
+        default=False
+    )
     parser_showroute = subparsers.add_parser("showroute", help="顯示公車路線狀態")
     parser_searchroute = subparsers.add_parser("searchroute", help="查詢路線")
     parser_searchstop = subparsers.add_parser("searchstop", help="查詢站點")
@@ -374,9 +380,18 @@ def main():
     try:
         update_provider(args.provider)
         if args.cmd == "updatedb":
-            print("正在更新資料庫...")
-            update_database(info=True)
-            print("資料庫更新成功。")
+            if args.checkonly:
+                print("正在檢查更新...")
+                updates = check_database_update()
+                for p in updates.keys():
+                    if updates[p]:
+                        print(f"資料庫 {p} 有新的更新！版本：{updates[p]}")
+                if not any(updates.values()):
+                    print("資料庫目前沒有可用的更新。")
+            else:
+                print("正在更新資料庫...")
+                update_database(info=True)
+                print("資料庫更新成功。")
 
         elif args.cmd == "showroute":
             data = asyncio.run(get_complete_bus_info(args.routeid))
