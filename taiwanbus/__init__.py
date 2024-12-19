@@ -234,7 +234,7 @@ async def fetch_stops_by_route(route_key: int):
                         elif si[0] == "nm":
                             j["stop_name"] = si[1]
                         elif si[0] == "seq":
-                            j["sequence"] = si[1]
+                            j["sequence"] = int(si[1])
                         else:
                             j[si[0]] = si[1]
                     ss.append(j)
