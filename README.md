@@ -24,7 +24,11 @@ taiwanbus updatedb
 ## 終端機
 ```
 usage: taiwanbus [-h] [-p PROVIDER]
-          {updatedb,showroute,searchroute,searchstop} ...                                                                    TaiwanBus                                                                                                                           positional arguments:
+          {updatedb,showroute,searchroute,searchstop} ...
+
+TaiwanBus
+
+positional arguments:
    {updatedb,showroute,searchroute,searchstop}
        updatedb            更新公車資料庫
        showroute           顯示公車路線狀態
