@@ -12,10 +12,36 @@ import argparse
 import taiwanbus.exceptions
 from pathlib import Path
 
+DATABASE_ACCESSIBLE = None
 home = os.path.join(Path.home(), ".taiwanbus")
-if not os.path.exists(home):
-    os.mkdir(home)
+try:
+    if not os.path.exists(home):
+        os.mkdir(home)
+    testfile = os.path.join(home, ".tmp")
+    with open(testfile, "w") as f:
+        f.write("test")
+    os.remove(testfile)
+    DATABASE_ACCESSIBLE = True
+except:
+    DATABASE_ACCESSIBLE = False
 current = os.path.join(home, "bus_twn.sqlite")
+
+
+def update_database_dir(path):
+    home = os.path.join(path, ".taiwanbus")
+    try:
+        if not os.path.exists(home):
+            os.mkdir(home)
+        testfile = os.path.join(home, ".tmp")
+        with open(testfile, "w") as f:
+            f.write("test")
+        os.remove(testfile)
+        DATABASE_ACCESSIBLE = True
+    except:
+        DATABASE_ACCESSIBLE = False
+    provider_file = os.path.basename(current)
+    current = os.path.join(home, provider_file)
+    return DATABASE_ACCESSIBLE
 
 
 def update_provider(provider):
