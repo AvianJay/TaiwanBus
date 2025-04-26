@@ -300,7 +300,10 @@ async def get_complete_bus_info(route_key):
     # route_info = await fetch_route(route_key)
     paths = await fetch_paths(route_key)
     stops = await fetch_stops_by_route(route_key)
-    buses = getbus(route_key)
+    try:
+        buses = getbus(route_key)
+    except:
+        buses = False
     result = {}
 
     for path in paths:
@@ -310,7 +313,8 @@ async def get_complete_bus_info(route_key):
         for stop in stops:
             if path_id == stop["path_id"]:
                 stop_id = str(stop['stop_id'])
-                matching_buses = [bus for bus in buses if bus['id'] == stop_id]
+                if buses:
+                    matching_buses = [bus for bus in buses if bus['id'] == stop_id]
                 if matching_buses:
                     bus_info = matching_buses[0]
                     stop.update({
