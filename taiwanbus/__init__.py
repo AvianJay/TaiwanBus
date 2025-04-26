@@ -27,7 +27,9 @@ except:
 current = os.path.join(home, "bus_twn.sqlite")
 
 
-def update_database_dir(path):
+def update_database_dir(path) -> bool:
+    global current
+    global DATABASE_ACCESSIBLE
     home = os.path.join(path, ".taiwanbus")
     try:
         if not os.path.exists(home):
@@ -54,7 +56,9 @@ def update_provider(provider):
             f"Invaild provider {provider}")
 
 
-def check_database_update(path=home):
+def check_database_update(path=None) -> dict:
+    if not path:
+        path = home
     local = {"tcc": 0, "tpe": 0, "twn": 0}
     version_path = os.path.join(path, "version.json")
     if os.path.exists(version_path):
@@ -83,11 +87,18 @@ def check_database_update(path=home):
     return local
 
 
-def update_database(path=home, info=False):
+def update_database(path=None, info=False):
+    if not path:
+        path = home
     local = {"tcc": 0, "tpe": 0, "twn": 0}
     version_path = os.path.join(path, "version.json")
     if os.path.exists(version_path):
-        local = json.loads(open(version_path, "r").read())
+        try:
+            local = json.load(open(version_path, "r"))
+        except json.JSONDecodeError:
+            local = {"tcc": 0, "tpe": 0, "twn": 0}
+    if info:
+        print("取得台中版本資訊...")
     baseurl = requests.get(
         "https://files.bus.yahoo.com/bustracker/data/dataurl_tcc.txt"
     ).text
@@ -134,7 +145,9 @@ def update_database(path=home, info=False):
     open(version_path, "w").write(json.dumps(local))
 
 
-def checkdb(path=current, only_stop=False):
+def checkdb(path=None, only_stop=False) -> None:
+    if not path:
+        path = current
     if not os.path.exists(path):
         raise taiwanbus.exceptions.DatabaseNotFoundError(
             "Cannot find database")
@@ -143,7 +156,7 @@ def checkdb(path=current, only_stop=False):
             "No stops data in twn")
 
 
-async def fetch_route(id: int):
+async def fetch_route(id: int) -> list:
     checkdb()
     async with aiosqlite.connect(current) as db:
         async with db.execute(
@@ -157,7 +170,19 @@ async def fetch_route(id: int):
             return result
 
 
-async def fetch_routes_by_name(name: str):
+async def fetch_all_routes() -> list:
+    checkdb()
+    async with aiosqlite.connect(current) as db:
+        async with db.execute("SELECT * FROM routes") as cursor:
+            columns = [description[0] for description in cursor.description]
+            result = []
+            async for row in cursor:
+                row_dict = dict(zip(columns, row))
+                result.append(row_dict)
+            return result
+
+
+async def fetch_routes_by_name(name: str) -> list:
     checkdb()
     async with aiosqlite.connect(current) as db:
         async with db.execute(
@@ -172,7 +197,7 @@ async def fetch_routes_by_name(name: str):
             return result
 
 
-async def fetch_stops_by_name(name: str):
+async def fetch_stops_by_name(name: str) -> list:
     checkdb(only_stop=True)
     async with aiosqlite.connect(current) as db:
         async with db.execute(
@@ -186,7 +211,7 @@ async def fetch_stops_by_name(name: str):
             return result
 
 
-async def fetch_stop(id: int):
+async def fetch_stop(id: int) -> list:
     checkdb(only_stop=True)
     async with aiosqlite.connect(current) as db:
         async with db.execute(
@@ -200,7 +225,7 @@ async def fetch_stop(id: int):
             return result
 
 
-async def fetch_paths(id: int):
+async def fetch_paths(id: int) -> list:
     checkdb()
     async with aiosqlite.connect(current) as db:
         async with db.execute(
@@ -214,7 +239,7 @@ async def fetch_paths(id: int):
             return result
 
 
-async def fetch_path_by_stop(id: int):
+async def fetch_path_by_stop(id: int) -> list:
     checkdb()
     stop = await fetch_stop(id)
     pathid = stop[0]["path_id"]
@@ -231,7 +256,7 @@ async def fetch_path_by_stop(id: int):
             return result
 
 
-async def fetch_stops_by_route(route_key: int):
+async def fetch_stops_by_route(route_key: int) -> list:
     checkdb()
     if "bus_twn.sqlite" in current:
         r = requests.get(
@@ -277,7 +302,7 @@ async def fetch_stops_by_route(route_key: int):
             return result
 
 
-def getbus(id):
+def getbus(id) -> list:
     r = requests.get(f"https://busserver.bus.yahoo.com/api/route/{id}")
     d = zlib.decompress(r.content).decode()
     x = et.XML(d)
@@ -296,7 +321,7 @@ def getbus(id):
     return j
 
 
-async def get_complete_bus_info(route_key):
+async def get_complete_bus_info(route_key) -> dict:
     # route_info = await fetch_route(route_key)
     paths = await fetch_paths(route_key)
     stops = await fetch_stops_by_route(route_key)
@@ -340,7 +365,7 @@ async def get_complete_bus_info(route_key):
     return result
 
 
-def format_bus_info(json_data):
+def format_bus_info(json_data: dict) -> str:
     result = ""
 
     for path_id, path_data in json_data.items():
