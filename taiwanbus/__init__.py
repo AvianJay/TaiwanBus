@@ -22,7 +22,7 @@ try:
         f.write("test")
     os.remove(testfile)
     DATABASE_ACCESSIBLE = True
-except:
+except Exception:
     DATABASE_ACCESSIBLE = False
 current = os.path.join(home, "bus_twn.sqlite")
 
@@ -39,7 +39,7 @@ def update_database_dir(path) -> bool:
             f.write("test")
         os.remove(testfile)
         DATABASE_ACCESSIBLE = True
-    except:
+    except Exception:
         DATABASE_ACCESSIBLE = False
     provider_file = os.path.basename(current)
     current = os.path.join(home, provider_file)
@@ -327,7 +327,7 @@ async def get_complete_bus_info(route_key) -> dict:
     stops = await fetch_stops_by_route(route_key)
     try:
         buses = getbus(route_key)
-    except:
+    except Exception:
         buses = False
     result = {}
 
@@ -339,7 +339,9 @@ async def get_complete_bus_info(route_key) -> dict:
             if path_id == stop["path_id"]:
                 stop_id = str(stop['stop_id'])
                 if buses:
-                    matching_buses = [bus for bus in buses if bus['id'] == stop_id]
+                    matching_buses = [
+                        bus for bus in buses if bus['id'] == stop_id
+                    ]
                 if matching_buses:
                     bus_info = matching_buses[0]
                     stop.update({
