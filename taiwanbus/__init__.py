@@ -28,6 +28,7 @@ current = os.path.join(home, "bus_twn.sqlite")
 
 
 def update_database_dir(path) -> bool:
+    global home
     global current
     global DATABASE_ACCESSIBLE
     home = os.path.join(path, ".taiwanbus")
