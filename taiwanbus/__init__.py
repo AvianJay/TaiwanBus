@@ -12,6 +12,8 @@ import argparse
 import taiwanbus.exceptions
 from pathlib import Path
 
+__version__ = "0.0.9"
+
 DATABASE_ACCESSIBLE = None
 home = os.path.join(Path.home(), ".taiwanbus")
 try:
