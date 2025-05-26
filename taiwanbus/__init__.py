@@ -4,6 +4,7 @@ import os
 import sys
 import requests
 import zlib
+import math
 import xml.etree.ElementTree as et
 import aiosqlite
 import json
@@ -304,6 +305,41 @@ async def fetch_stops_by_route(route_key: int) -> list:
                 row_dict = dict(zip(columns, row))
                 result.append(row_dict)
             return result
+
+
+async def fetch_stops_nearby(
+        lat: float,
+        lon: float,
+        radius: int = 100
+) -> list:
+    checkdb(only_stop=True)
+    async with aiosqlite.connect(current) as db:
+        async with db.execute(
+            "SELECT * FROM stops WHERE "
+            "ABS(latitude - ?) <= ? AND "
+            "ABS(longitude - ?) <= ?",
+            (lat,
+             radius / 111320,
+             lon,
+             radius / (111320 * abs(math.cos(math.radians(lat))))
+             )
+        ) as cursor:
+            columns = [description[0] for description in cursor.description]
+            result = []
+            async for row in cursor:
+                row_dict = dict(zip(columns, row))
+                result.append(row_dict)
+            return result
+
+
+async def fetch_stops_passby(stop_id: int, radius: int = 100) -> list:
+    checkdb(only_stop=True)
+    stop = await fetch_stop(stop_id)
+    if not stop:
+        return []
+    lat = stop[0]['latitude']
+    lon = stop[0]['longitude']
+    return await fetch_stops_nearby(lat, lon, radius)
 
 
 def getbus(id) -> list:
