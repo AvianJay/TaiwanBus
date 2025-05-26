@@ -10,6 +10,7 @@ import json
 import asyncio
 import argparse
 import taiwanbus.exceptions
+import cache
 from pathlib import Path
 
 __version__ = "0.0.9"
@@ -326,12 +327,17 @@ def getbus(id) -> list:
 
 async def get_complete_bus_info(route_key) -> dict:
     # route_info = await fetch_route(route_key)
-    paths = await fetch_paths(route_key)
-    stops = await fetch_stops_by_route(route_key)
+    if cache.get_cache(route_key):
+        paths, stops = cache.get_cache(route_key)
+    else:
+        paths = await fetch_paths(route_key)
+        stops = await fetch_stops_by_route(route_key)
+        cache.set_cache(route_key, (paths, stops), expire_time=600)
     try:
         buses = getbus(route_key)
-    except Exception:
-        buses = False
+    except Exception as e:
+        print("[WARN]無法取得公車資訊，可能是網路問題或API服務異常。", e)
+        buses = []
     result = {}
 
     for path in paths:
