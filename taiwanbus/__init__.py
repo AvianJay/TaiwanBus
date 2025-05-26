@@ -11,7 +11,7 @@ import json
 import asyncio
 import argparse
 import taiwanbus.exceptions
-import cache
+import taiwanbus.cache as cache
 from pathlib import Path
 
 __version__ = "0.0.9"
