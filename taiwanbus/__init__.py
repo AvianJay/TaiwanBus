@@ -13,6 +13,7 @@ import argparse
 import taiwanbus.exceptions
 import taiwanbus.cache as cache
 from pathlib import Path
+from enum import Enum
 
 __version__ = "0.0.9"
 
@@ -29,6 +30,12 @@ try:
 except Exception:
     DATABASE_ACCESSIBLE = False
 current = os.path.join(home, "bus_twn.sqlite")
+
+
+class Provider(Enum):
+    TWN = "twn"
+    TCC = "tcc"
+    TPE = "tpe"
 
 
 def update_database_dir(path) -> bool:
@@ -51,14 +58,9 @@ def update_database_dir(path) -> bool:
     return DATABASE_ACCESSIBLE
 
 
-def update_provider(provider):
+def update_provider(provider: Provider) -> None:
     global current
-    providers = ["tcc", "tpe", "twn"]
-    if provider in providers:
-        current = os.path.join(home, f"bus_{provider}.sqlite")
-    else:
-        raise taiwanbus.exceptions.InvaildProvider(
-            f"Invaild provider {provider}")
+    current = os.path.join(home, f"bus_{provider.value}.sqlite")
 
 
 def check_database_update(path=None) -> dict:
@@ -343,22 +345,26 @@ async def fetch_stops_passby(stop_id: int, radius: int = 100) -> list:
 
 
 def getbus(id) -> list:
-    r = requests.get(f"https://busserver.bus.yahoo.com/api/route/{id}")
-    d = zlib.decompress(r.content).decode()
-    x = et.XML(d)
-    j = []
-    for e in x:
-        t = {}
-        for a in e.items():
-            t[a[0]] = a[1]
-        t["bus"] = []
-        for ec in e:
-            b = {}
-            for a in ec.items():
-                b[a[0]] = a[1]
-            t["bus"].append(b)
-        j.append(t)
-    return j
+    if cache.get_cache("API" + id):
+        return cache.get_cache("API" + id)
+    else:
+        r = requests.get(f"https://busserver.bus.yahoo.com/api/route/{id}")
+        d = zlib.decompress(r.content).decode()
+        x = et.XML(d)
+        j = []
+        for e in x:
+            t = {}
+            for a in e.items():
+                t[a[0]] = a[1]
+            t["bus"] = []
+            for ec in e:
+                b = {}
+                for a in ec.items():
+                    b[a[0]] = a[1]
+                t["bus"].append(b)
+            j.append(t)
+        cache.set_cache("API" + id, j, expire_time=1)
+        return j
 
 
 async def get_complete_bus_info(route_key) -> dict:
@@ -480,7 +486,11 @@ def main():
     args = parser.parse_args()
 
     try:
-        update_provider(args.provider)
+        update_provider(Provider(args.provider))
+        if not DATABASE_ACCESSIBLE:
+            raise taiwanbus.exceptions.DatabaseNotFoundError(
+                "無法存取資料庫，請檢查資料庫目錄權限。"
+            )
         if args.cmd == "updatedb":
             if args.checkonly:
                 print("正在檢查更新...")
