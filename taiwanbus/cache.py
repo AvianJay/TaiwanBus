@@ -15,7 +15,7 @@ def get_cache(key):
     return None
 
 
-def set_cache(key, value, expire_time=CACHE_TIME):
+def set_cache(key, value, expire_time=CACHE_TIME) -> None:
     # Remove existing item if it exists
     for item in cache:
         if item['key'] == key:
