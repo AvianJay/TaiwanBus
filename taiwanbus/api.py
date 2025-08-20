@@ -13,6 +13,7 @@ from enum import Enum
 import sqlite3
 
 
+# database
 DATABASE_ACCESSIBLE = None
 home = os.path.join(Path.home(), ".taiwanbus")
 try:
@@ -26,6 +27,11 @@ try:
 except Exception:
     DATABASE_ACCESSIBLE = False
 current = os.path.join(home, "bus_twn.sqlite")
+
+
+# base url
+BUSFILE_URL = "https://files.bus.yahoo.com/"
+BUSSERVER_URL = "https://busserver.bus.yahoo.com/"
 
 
 class Provider(Enum):
@@ -67,21 +73,21 @@ def check_database_update(path=None) -> dict:
     if os.path.exists(version_path):
         local = json.loads(open(version_path, "r").read())
     baseurl = requests.get(
-        "https://files.bus.yahoo.com/bustracker/data/dataurl_tcc.txt"
+        BUSFILE_URL + "bustracker/data/dataurl_tcc.txt"
     ).text
     if local["tcc"] < int(baseurl.split("/")[-2]):
         local["tcc"] = int(baseurl.split("/")[-2])
     else:
         local["tcc"] = False
     baseurl = requests.get(
-        "https://files.bus.yahoo.com/bustracker/data/dataurl_tpe.txt"
+        BUSFILE_URL + "bustracker/data/dataurl_tpe.txt"
     ).text
     if local["tpe"] < int(baseurl.split("/")[-2]):
         local["tpe"] = int(baseurl.split("/")[-2])
     else:
         local["tpe"] = False
     baseurl = requests.get(
-        "https://files.bus.yahoo.com/bustracker/data/dataurl.txt"
+        BUSFILE_URL + "bustracker/data/dataurl.txt"
     ).text
     if local["twn"] < int(baseurl.split("/")[-2]):
         local["twn"] = int(baseurl.split("/")[-2])
@@ -103,7 +109,7 @@ def update_database(path=None, info=False):
     if info:
         print("取得台中版本資訊...")
     baseurl = requests.get(
-        "https://files.bus.yahoo.com/bustracker/data/dataurl_tcc.txt"
+        BUSFILE_URL + "bustracker/data/dataurl_tcc.txt"
     ).text
     if local["tcc"] < int(baseurl.split("/")[-2]):
         if info:
@@ -118,7 +124,7 @@ def update_database(path=None, info=False):
     if info:
         print("取得台北版本資訊...")
     baseurl = requests.get(
-        "https://files.bus.yahoo.com/bustracker/data/dataurl_tpe.txt"
+        BUSFILE_URL + "bustracker/data/dataurl_tpe.txt"
     ).text
     if local["tpe"] < int(baseurl.split("/")[-2]):
         if info:
@@ -133,7 +139,7 @@ def update_database(path=None, info=False):
     if info:
         print("取得全台版本資訊...")
     baseurl = requests.get(
-        "https://files.bus.yahoo.com/bustracker/data/dataurl.txt"
+        BUSFILE_URL + "bustracker/data/dataurl.txt"
     ).text
     if local["twn"] < int(baseurl.split("/")[-2]):
         if info:
@@ -263,7 +269,7 @@ def fetch_stops_by_route(route_key: int) -> list:
     checkdb()
     if "bus_twn.sqlite" in current:
         r = requests.get(
-            f"https://files.bus.yahoo.com/bustracker/routes/{route_key}_zh.dat"
+            BUSFILE_URL + f"bustracker/routes/{route_key}_zh.dat"
         )
         d = zlib.decompress(r.content).decode()
         x = et.XML(d)
@@ -341,10 +347,11 @@ def fetch_stops_passby(stop_id: int, radius: int = 100) -> list:
 
 
 def getbus(id) -> list:
+    id = str(id)
     if cache.get_cache("API" + id):
         return cache.get_cache("API" + id)
     else:
-        r = requests.get(f"https://busserver.bus.yahoo.com/api/route/{id}")
+        r = requests.get(BUSSERVER_URL + f"api/route/{id}")
         d = zlib.decompress(r.content).decode()
         x = et.XML(d)
         j = []
