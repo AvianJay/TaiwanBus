@@ -43,19 +43,31 @@ options:
 ## Python
 ```python
 # 引入依賴庫
-import taiwanbus
+from taiwanbus.session import BusSession
+from taiwanbus import api
 
 # 更新資料庫
-taiwanbus.update_database()
+api.update_database()
 
-# 切換地區資料庫
+# 地區資料庫
 # 全台（無站點資料，無法查詢單一車站）：twn
 # 台中：tcc
 # 台北：tpe
-taiwanbus.update_provider("twn") # 替換 twn 成所需地區
-
 # 取得路線
-taiwanbus.get_complete_bus_info("304030") # 綠3
+bus = BusSession("304030", api.Provider.TWN)  # 綠3, 全台
+
+# 更新資訊
+bus.update()
+
+# 取得資訊
+bus.get_info()
+
+# 取得站點
+bus.get_stop(...)
+
+# 模擬功能
+bus.start_simulate()
+bus.get_simulated_info()
 ```
 # Termux/Discord
 項目已移至[AvianJay/TaiwanBus-Utils](https://github.com/AvianJay/TaiwanBus-Utils)。
