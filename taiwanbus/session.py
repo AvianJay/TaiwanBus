@@ -56,7 +56,7 @@ class BusSession:
             self.SIMULATE_THREAD.start()
 
     def stop_simulate(self):
-        self.SIMULATE_STOPED = True
+        self.SIMULATE_STOPPED = True
 
     def get_simulated_info(self):
         return self.SIMULATED_BUSINFO
