@@ -9,7 +9,6 @@ from datetime import datetime
 
 class BusSession:
     def __init__(self, route_key, provider=api.Provider.TWN, simulate_rate=1):
-        # super() call removed as there is no parent class to initialize
         self.BUSINFO = None
         self.SIMULATED_BUSINFO = None
         self.LAST_UPDATE = 0
