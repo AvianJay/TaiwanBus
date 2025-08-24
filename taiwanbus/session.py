@@ -19,6 +19,7 @@ class BusSession:
         )
         self.SIMULATE_STOPED = True
         self.SIMULATE_RATE = simulate_rate
+        self.SIMULATE_TIME_DIFF = 0
         api.update_provider(provider)
 
     def update(self):
@@ -39,11 +40,11 @@ class BusSession:
             if self.SIMULATE_STOPED:
                 break
             now = datetime.now().timestamp()
-            time_diff = int(now - self.LAST_UPDATE)
+            self.SIMULATE_TIME_DIFF = int(now - self.LAST_UPDATE)
             self.SIMULATED_BUSINFO = self.BUSINFO.copy()
             for path in self.SIMULATED_BUSINFO.values():
                 for stop in path["stops"]:
-                    stop["sec"] += time_diff
+                    stop["sec"] += self.SIMULATE_TIME_DIFF
             time.sleep(self.SIMULATE_RATE)
 
     def start_simulate(self):
