@@ -23,4 +23,4 @@ class BusSession:
                     return stop
 
     def get_path(self, pathid):
-        return self.get(pathid)
+        return self.BUSINFO.get(pathid)
