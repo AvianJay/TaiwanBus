@@ -28,6 +28,8 @@ class BusSession:
         self.LAST_UPDATE = datetime.now().timestamp()
 
     def get_stop(self, stopid: int):
+        if self.BUSINFO is None:
+            return None
         for path in self.BUSINFO.values():
             for stop in path["stops"]:
                 if stop.get("stop_id") == stopid:
