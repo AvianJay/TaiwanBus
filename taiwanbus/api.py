@@ -30,8 +30,8 @@ current = os.path.join(home, "bus_twn.sqlite")
 
 
 # base url
-BUSFILE_URL = "https://files.bus.yahoo.com/"
-BUSSERVER_URL = "https://busserver.bus.yahoo.com/"
+BUSFILE_URL = os.getenv("BUSFILE_URL", "https://files.bus.yahoo.com/")
+BUSSERVER_URL = os.getenv("BUSSERVER_URL", "https://busserver.bus.yahoo.com/")
 
 
 class Provider(Enum):
