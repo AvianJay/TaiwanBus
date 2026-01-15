@@ -320,8 +320,8 @@ def fetch_stops_nearby(
     with sqlite3.connect(current) as db:
         cursor = db.execute(
             "SELECT * FROM stops WHERE "
-            "ABS(latitude - ?) <= ? AND "
-            "ABS(longitude - ?) <= ?",
+            "ABS(lat - ?) <= ? AND "
+            "ABS(lon - ?) <= ?",
             (lat,
              radius / 111320,
              lon,
@@ -341,8 +341,8 @@ def fetch_stops_passby(stop_id: int, radius: int = 100) -> list:
     stop = fetch_stop(stop_id)
     if not stop:
         return []
-    lat = stop[0]['latitude']
-    lon = stop[0]['longitude']
+    lat = stop[0]['lat']
+    lon = stop[0]['lon']
     return fetch_stops_nearby(lat, lon, radius)
 
 
