@@ -5,7 +5,7 @@ import argparse
 import taiwanbus.exceptions
 import taiwanbus.api as api
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 
 def main():
