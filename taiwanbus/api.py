@@ -65,6 +65,10 @@ def update_provider(provider: Provider) -> None:
     current = os.path.join(home, f"bus_{provider.value}.sqlite")
 
 
+def get_provider_path(provider: Provider) -> str:
+    return os.path.join(home, f"bus_{provider.value}.sqlite")
+
+
 def check_database_update(path=None) -> dict:
     if not path:
         path = home
